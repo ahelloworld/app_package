@@ -5,9 +5,9 @@ import multiprocessing
 import urllib
 import re
 import sys
-import os
 
-path = os.path.split(sys.argv[0])[0]
+path = sys.path[0]
+print path
 sys.path.append(path + '/resume')
 sys.path.append(path + '/mail')
 import resume
@@ -63,22 +63,24 @@ def proc():
 							try:
 								header = datas.split('\r\n')
 								for h in header:
-									if h.find('GET') != -1:
+									if h.upper().find('GET') != -1:
 										req = h.split()[1]
-									elif h.find('HOST') != -1:
-										host = re.search(r'(\w)\.', h).group(1)
+									elif h.upper().find('HOST') != -1:
+										host = re.search(r'(\w+)\.', h).group(1)
+										print host
 								if req == '/':
 									req = '/index.html'
 								if host == 'resume':
 									func = resume
 								elif host == 'mail':
-									func == mail
+									func = mail
 								req = urllib.unquote(req)
 								reqlist[fd] = [func, req]
 								sendlog[fd] = 0
 								print 'request:\t%s' % req
 								epoll.modify(fd, select.EPOLLOUT|select.EPOLLET)
-							except:
+							except Exception, e:
+								print e
 								remove_client(fd, epoll, connections, 'recv data error')
 						else:
 							print 'recv:' + str(e)
