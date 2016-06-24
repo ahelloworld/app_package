@@ -1,4 +1,5 @@
 import sqlite3
+import sys
 
 def conn():
 	global dbpath

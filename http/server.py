@@ -5,10 +5,11 @@ import multiprocessing
 import urllib
 import re
 import sys
+import os
 
-sys.path.append(sys.argv[0] + '/resume')
-sys.path.append(sys.argv[0] + '/mail')
-print sys.path
+path = os.path.split(sys.argv[0])[0]
+sys.path.append(path + '/resume')
+sys.path.append(path + '/mail')
 import resume
 import mail
 
