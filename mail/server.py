@@ -1,6 +1,8 @@
 import socket
 import select
 import errno
+import re
+import time
 
 import db
 
@@ -10,30 +12,45 @@ class eml():
 		self.mto = None
 		self.ip = None
 		self.data = None
+		self.time = None
 	def save(self):
 		try:
+			self.mfrom = self.mfrom.replace('"','\'')
+			self.mto = self.mto.replace('"','\'')
+			self.data = self.data.replace('"','\'')
+			self.time = time.strftime('%Y-%m-%d %H:%M:%S')
 			db.insert(self)
 			return True
 		except Exception, e:
+			#print e
 			return False
 
 def r_hello(data, email):
 	return '220 mail.wblog.top TMJ Personal Mail Server\r\n'
 
 def r_protocol(data, email):
-	if data.upper().find('HELO') != -1:
+	if data.upper().find('HELO') != -1 or data.upper().find('EHLO') != -1:
 		email.data = data
-		return '250-MAIL\r\n'
+		return '250 OK\r\n'
 	return '502 Error\r\n'
 
-def r_ok(data, email):
-	if data.upper().find('MAIL FROM') != -1:
+def r_fromok(data, email):
+	r = re.match(r'MAIL FROM:\s*<(.+?)>', data)
+	if r:
+		mfrom = r.group(1)
+		print mfrom
 		email.data += data
-		email.mfrom = data
+		email.mfrom = mfrom
 		return '250 OK\r\n'
-	if data.upper().find('RCPT TO') != -1:
+	return '502 Error\r\n'
+
+def r_took(data, email):
+	r = re.match(r'RCPT TO:\s*<(.+?)>', data)
+	if r:
+		mto = r.group(1)
+		print mto
 		email.data += data
-		email.mto = data
+		email.mto = mto
 		return '250 OK\r\n'
 	return '502 Error\r\n'
 
@@ -61,8 +78,8 @@ def remove_client(fd, epoll, connections, rsn):
 	print 'removed:\t' + rsn
 
 def MailServer():
-	switch = {1: r_hello,2: r_protocol,3: r_ok,\
-		4: r_ok,5: r_start,6: r_data,7: r_end}
+	switch = {1: r_hello,2: r_protocol,3: r_fromok,\
+		4: r_took,5: r_start,6: r_data,7: r_end}
 	server = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
 	server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
@@ -104,6 +121,7 @@ def MailServer():
 							e.errno == errno.EAGAIN
 							raise e
 						datas += data
+						print datas
 					except socket.error, e:
 						if e.errno == errno.EAGAIN:
 							try:
@@ -118,15 +136,21 @@ def MailServer():
 							except:
 								remove_client(fd, epoll, connections, 'recv data error')
 						else:
-							print 'recv:' + str(e)
-							remove_client(fd, epoll, connections, 'recv error')
+							if mailbox_tmp[fd][2] == 6:
+								if mailbox_tmp[fd][0].save():
+									remove_client(fd, epoll, connections, 'mail save finish')
+								else:
+									remove_client(fd, epoll, connections, 'mail error')
+							else:
+								print 'recv:' + str(e)
+								remove_client(fd, epoll, connections, 'recv error')
 						break
 			elif events & select.EPOLLOUT:
 				email = mailbox_tmp[fd][0]
 				data = mailbox_tmp[fd][1]
 				state = mailbox_tmp[fd][2]
 				res = switch[state](data, email)
-				print [data]
+				#print [data]
 				try:
 					slen = connections[fd].send(res)
 					if slen == len(res):

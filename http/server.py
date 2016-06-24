@@ -65,7 +65,7 @@ def proc():
 								for h in header:
 									if h.find('GET') != -1:
 										req = h.split()[1]
-									elif h.find('HOTS') != -1:
+									elif h.find('HOST') != -1:
 										host = re.search(r'(\w)\.', h).group(1)
 								if req == '/':
 									req = '/index.html'

@@ -8,7 +8,7 @@ def conn():
 def createMailBox():
 	connection = conn()
 	try:
-		connection.execute('create table if not exists mailbox ("from" text not null,"to" text not null,"ip" text not null,"data" text not null)')
+		connection.execute('create table if not exists mailbox ("from" text not null,"to" text not null,"ip" text not null,"data" text not null,"time" text not null)')
 		connection.commit()
 	finally:
 		connection.close()
@@ -16,7 +16,7 @@ def createMailBox():
 def insert(data):
 	connection = conn()
 	try:
-		connection.execute('insert into mailbox values ("%s", "%s", "%s", "%s")' % (data.mfrom, data.mto, data.ip, data.data))
+		connection.execute('insert into mailbox values ("%s", "%s", "%s", "%s", "%s")' % (data.mfrom, data.mto, data.ip, data.data, data.time))
 		connection.commit()
 	finally:
 		connection.close()
@@ -33,5 +33,5 @@ def select():
 		return res
 
 base_dir = sys.argv[1]
-dbpath = base_dir + '/mailbox.db'
+dbpath = base_dir + '/mail/mailbox.db'
 createMailBox()
