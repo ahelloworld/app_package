@@ -2,17 +2,6 @@ import pymysql.cursors
 
 def conn():
 	global db_password
-	#'''
-	connection = pymysql.connect(
-		host='10.10.26.58',
-		port=3306,
-		user='u9H7oUpYA5LaEvqc',
-		password=db_password,
-		db='pmajRry52SeLt69Q',
-		charset='utf8mb4',
-		cursorclass=pymysql.cursors.DictCursor)
-	#'''
-	'''
 	connection = pymysql.connect(
 		host='127.0.0.1',
 		port=3306,
@@ -21,7 +10,6 @@ def conn():
 		db='mailbox',
 		charset='utf8mb4',
 		cursorclass=pymysql.cursors.DictCursor)
-	'''
 	return connection
 
 def createMailBox():

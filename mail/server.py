@@ -18,7 +18,7 @@ class eml():
 			return False
 
 def r_hello(data, email):
-	return '220 mail.wblog.top TMJ Mail Server\r\n'
+	return '220 mail.wblog.top TMJ Personal Mail Server\r\n'
 
 def r_protocol(data, email):
 	if data.upper().find('HELO') != -1:
@@ -97,7 +97,7 @@ def MailServer():
 					try:
 						data = connections[fd].recv(1024)
 						if not data and not datas:
-							remove_client(fd, epoll, connections, 'recv no data')
+							remove_client(fd, epoll, connections, 'connect break')
 							break
 						if len(data) == 0:
 							e = socket.error
@@ -108,6 +108,9 @@ def MailServer():
 						if e.errno == errno.EAGAIN:
 							try:
 								mailbox_tmp[fd][1] += datas
+								if len(mailbox_tmp[fd][1]) > 1024 * 1024 * 5:
+									remove_client(fd, epoll, connections, 'recv data too long')
+									break
 								if (mailbox_tmp[fd][2] == 5 and mailbox_tmp[fd][1].find('\r\n.\r\n') != -1)\
 									or (mailbox_tmp[fd][2] != 5 and mailbox_tmp[fd][1].find('\r\n') != -1):
 									mailbox_tmp[fd][2] += 1
