@@ -6,9 +6,10 @@ import urllib
 import re
 import sys
 
-sys.path.append("resume")
+sys.path.append(sys.argv[0] + '/resume')
+sys.path.append(sys.argv[0] + '/mail')
+print sys.path
 import resume
-sys.path.append("mail")
 import mail
 
 def remove_client(fd, epoll, connections, rsn):

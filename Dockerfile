@@ -6,4 +6,3 @@ RUN mkdir /app
 COPY / /app
 EXPOSE 80
 EXPOSE 25
-CMD python /app/http/server.py /docker
