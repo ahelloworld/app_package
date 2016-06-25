@@ -54,6 +54,14 @@ def rfile(fpath):
 	except:
 		return None
 
+def errjson():
+	text = json.dumps({'res':-1})
+	data = 'HTTP/1.1 200 OK\r\nServer: MailServer\r\nConnection: keep-alive\r\nContent-Length: '
+	data += str(len(text)) + '\r\n'
+	data += 'Content-Type: application/json;charset=utf-8\r\n\r\n'
+	data += text
+	return data
+
 def mailbox():
 	global home_dir
 	dbpath = home_dir + '/mailbox.db'
@@ -61,11 +69,15 @@ def mailbox():
 	cu = connection.cursor()
 	try:
 		cu.execute('select * from mailbox')
-		text = json.dumps(cu.fetchall())
+		text = cu.fetchall()
 		cu.close()
+		dt = {}
+		dt['res'] = 0
+		dt['data'] = text
+		dt = json.dumps(dt)
 		zbuf = StringIO.StringIO()
 		gziper = gzip.GzipFile(mode = 'wb', compresslevel = 9, fileobj = zbuf)
-		gziper.write(text)
+		gziper.write(dt)
 		gziper.close()
 		text = zbuf.getvalue()
 		data = 'HTTP/1.1 200 OK\r\nServer: MailServer\r\nConnection: keep-alive\r\nContent-Encoding: gzip\r\nContent-Length: '
@@ -114,6 +126,10 @@ def response(req, cookie):
 					if data:
 						code = 200
 						return data, code
+				else:
+					data = errjson()
+					code = 200
+					return data, code
 		except:
 			pass
 	else:
