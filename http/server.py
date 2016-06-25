@@ -65,7 +65,7 @@ def proc():
 								cookie = ''
 								header = datas.split('\r\n')
 								for h in header:
-									if h.upper().find('GET') == 0:
+									if h.upper().find('GET ') == 0:
 										req = h.split()[1]
 									elif h.upper().find('HOST') == 0:
 										host = re.search(r'(\w+)\.', h).group(1)
