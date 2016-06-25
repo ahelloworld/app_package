@@ -2,7 +2,6 @@ import socket
 import select
 import errno
 import re
-import time
 
 import db
 
@@ -12,13 +11,10 @@ class eml():
 		self.mto = None
 		self.ip = None
 		self.data = None
-		self.time = None
 	def save(self):
 		try:
 			self.mfrom = self.mfrom.replace('"','\'')
 			self.mto = self.mto.replace('"','\'')
-			self.data = self.data.replace('"','\'')
-			self.time = time.strftime('%Y-%m-%d %H:%M:%S')
 			db.insert(self)
 			return True
 		except Exception, e:
@@ -29,7 +25,7 @@ def r_hello(data, email):
 	return '220 mail.wblog.top TMJ Personal Mail Server\r\n'
 
 def r_protocol(data, email):
-	if data.upper().find('HELO') != -1 or data.upper().find('EHLO') != -1:
+	if data.upper().find('HELO') == 0 or data.upper().find('EHLO') == 0:
 		email.data = data
 		return '250 OK\r\n'
 	return '502 Error\r\n'
@@ -55,7 +51,7 @@ def r_took(data, email):
 	return '502 Error\r\n'
 
 def r_start(data, email):
-	if data.upper().find('DATA') != -1:
+	if data.upper().find('DATA') == 0:
 		email.data += '\r\n'
 		return '354 Start\r\n'
 	return '502 Error\r\n'
@@ -67,7 +63,7 @@ def r_data(data, email):
 	return '502 Error\r\n'
 
 def r_end(data, email):
-	if data.upper().find('QUIT') != -1:
+	if data.upper().find('QUIT') == 0:
 		return '221 Bye\r\n'
 	return '502 Error\r\n'
 

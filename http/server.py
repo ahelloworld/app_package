@@ -7,11 +7,12 @@ import re
 import sys
 
 path = sys.path[0]
-print path
 sys.path.append(path + '/resume')
 sys.path.append(path + '/mail')
+sys.path.append(path + '/other')
 import resume
 import mail
+import other
 
 def remove_client(fd, epoll, connections, rsn):
 	epoll.unregister(fd)
@@ -61,21 +62,27 @@ def proc():
 					except socket.error, e:
 						if e.errno == errno.EAGAIN:
 							try:
+								cookie = ''
 								header = datas.split('\r\n')
 								for h in header:
-									if h.upper().find('GET') != -1:
+									if h.upper().find('GET') == 0:
 										req = h.split()[1]
-									elif h.upper().find('HOST') != -1:
+									elif h.upper().find('HOST') == 0:
 										host = re.search(r'(\w+)\.', h).group(1)
-										print host
+									elif h.upper().find('COOKIE') == 0:
+										r = re.search(r'UUID=(\d+)', h)
+										if r:
+											cookie = r.group(1)
 								if req == '/':
 									req = '/index.html'
 								if host == 'resume':
 									func = resume
 								elif host == 'mail':
 									func = mail
+								else:
+									func = other
 								req = urllib.unquote(req)
-								reqlist[fd] = [func, req]
+								reqlist[fd] = [func, req, cookie]
 								sendlog[fd] = 0
 								print 'request:\t%s' % req
 								epoll.modify(fd, select.EPOLLOUT|select.EPOLLET)
@@ -88,7 +95,7 @@ def proc():
 						break
 			elif events & select.EPOLLOUT:
 				slen = sendlog[fd]
-				data, code = reqlist[fd][0].response(reqlist[fd][1])
+				data, code = reqlist[fd][0].response(reqlist[fd][1], reqlist[fd][2])
 				try:
 					slen += connections[fd].send(data[slen:])
 					print 'sending:\t%d' % slen
@@ -109,7 +116,7 @@ def proc():
 	epoll.close()
 
 pl = []
-for x in xrange(2):
+for x in xrange(3):
 	p = multiprocessing.Process(target = proc, args = ())
 	p.daemon = True
 	p.start()

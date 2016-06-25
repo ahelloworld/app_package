@@ -20,23 +20,23 @@ def readfile(dirn, resdict, slen):
 			gziper.write(data)
 			gziper.close()
 			text = zbuf.getvalue()
-			data = 'HTTP/1.1 200 OK\r\nServer:ResumeServer\r\nConnection:keep-alive\r\nContent-Encoding:gzip\r\nContent-Length:'
+			data = 'HTTP/1.1 200 OK\r\nServer: ResumeServer\r\nConnection: keep-alive\r\nContent-Encoding: gzip\r\nContent-Length: '
 			data += str(len(text)) + '\r\n'
 			if fpath[-4:] == 'html':
-				data += 'Content-Type:text/html;charset=utf-8\r\n\r\n'
+				data += 'Content-Type: text/html;charset=utf-8\r\n\r\n'
 			else:
-				data += 'Content-Type:application/octet-stream\r\nAccept-Ranges:bytes\r\n\r\n'
+				data += 'Content-Type: application/octet-stream\r\nAccept-Ranges: bytes\r\n\r\n'
 			data += text
 			resdict[fpath[slen:]] = data
 
 def make404(resdict):
 	text = '<p>Page Not Found</p>'
-	data = 'HTTP/1.1 404 NotFound\r\nServer:ResumeServer\r\nConnection:keep-alive\r\nContent-Length:'
-	data += str(len(text)) + '\r\nContent-Type:text/html;charset=utf-8\r\n\r\n'
+	data = 'HTTP/1.1 404 NotFound\r\nServer: ResumeServer\r\nConnection: keep-alive\r\nContent-Length: '
+	data += str(len(text)) + '\r\nContent-Type: text/html;charset=utf-8\r\n\r\n'
 	data += text
 	resdict['404'] = data
 
-def response(req):
+def response(req, cookie):
 	global resdict
 	if req != None and resdict.has_key(req):
 		data = resdict[req]
