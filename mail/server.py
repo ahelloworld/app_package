@@ -110,14 +110,20 @@ def MailServer():
 					try:
 						data = connections[fd].recv(1024)
 						if not data and not datas:
-							remove_client(fd, epoll, connections, 'connect break')
+							if mailbox_tmp[fd][2] == 6:
+								if mailbox_tmp[fd][0].save():
+									remove_client(fd, epoll, connections, 'mail save finish')
+								else:
+									remove_client(fd, epoll, connections, 'mail error')
+							else:
+								remove_client(fd, epoll, connections, 'connect break')
 							break
 						if len(data) == 0:
 							e = socket.error
 							e.errno == errno.EAGAIN
 							raise e
 						datas += data
-						print datas
+						#print datas
 					except socket.error, e:
 						if e.errno == errno.EAGAIN:
 							try:
