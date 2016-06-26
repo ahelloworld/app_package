@@ -6,6 +6,15 @@ import StringIO
 base_dir = sys.argv[1]
 home_dir = base_dir + '/resume'
 
+def contenttype(path):
+	if fpath[-4:] == 'html':
+		return 'text/html;charset=utf-8'
+	if fpath[-3:] == 'mp3':
+		return 'audio/mpeg'
+	if fpath[-3:] == 'ogg':
+		return 'audio/ogg'
+	return 'application/octet-stream'
+
 def readfile(dirn, resdict, slen):
 	for parent, dnames, fnames in os.walk(dirn):
 		for dname in dnames:
@@ -22,10 +31,7 @@ def readfile(dirn, resdict, slen):
 			text = zbuf.getvalue()
 			data = 'HTTP/1.1 200 OK\r\nServer: ResumeServer\r\nConnection: keep-alive\r\nContent-Encoding: gzip\r\nContent-Length: '
 			data += str(len(text)) + '\r\n'
-			if fpath[-4:] == 'html':
-				data += 'Content-Type: text/html;charset=utf-8\r\n\r\n'
-			else:
-				data += 'Content-Type: application/octet-stream\r\nAccept-Ranges: bytes\r\n\r\n'
+			data += 'Content-Type: %s\r\n\r\n' % contenttype(fpath)
 			data += text
 			resdict[fpath[slen:]] = data
 
