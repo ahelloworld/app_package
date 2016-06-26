@@ -7,11 +7,11 @@ base_dir = sys.argv[1]
 home_dir = base_dir + '/resume'
 
 def contenttype(path):
-	if fpath[-4:] == 'html':
+	if path[-4:] == 'html':
 		return 'text/html;charset=utf-8'
-	if fpath[-3:] == 'mp3':
+	if path[-3:] == 'mp3':
 		return 'audio/mpeg'
-	if fpath[-3:] == 'ogg':
+	if path[-3:] == 'ogg':
 		return 'audio/ogg'
 	return 'application/octet-stream'
 
