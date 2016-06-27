@@ -53,11 +53,11 @@ def make404():
 
 def response(req, cookie):
 	global home_dir
-	fpath = req
+	fpath = req.split('?')[0]
 	if fpath.find('..') != -1:
 		return make404(), 404
 	try:
-		f = open(home_dir + '/mailbox' + fpath, 'r')
+		f = open(home_dir + fpath, 'r')
 		data = f.read()
 		f.close()
 		zbuf = StringIO.StringIO()
