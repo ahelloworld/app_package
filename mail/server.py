@@ -3,6 +3,7 @@ import select
 import errno
 import re
 import logging
+import sys
 
 import db
 
