@@ -44,7 +44,7 @@ def r_protocol(data, email):
 
 def r_fromok(data, email):
 	logging.debug('from:\t%s' % data)
-	r = re.match(r'MAIL FROM:\s*<(.+?)>', data)
+	r = re.match(r'MAIL FROM:\s*<(.+?)>', data.strip())
 	if r:
 		mfrom = r.group(1)
 		print mfrom
@@ -55,7 +55,7 @@ def r_fromok(data, email):
 
 def r_took(data, email):
 	logging.debug('to:\t%s' % data)
-	r = re.match(r'RCPT TO:\s*<(.+?)>', data)
+	r = re.match(r'RCPT TO:\s*<(.+?)>', data.strip())
 	if r:
 		mto = r.group(1)
 		print mto
