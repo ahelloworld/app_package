@@ -8,7 +8,7 @@ def conn():
 
 def save(fname, data):
 	global home_dir
-	f = open(home_dir + '/mailbox/' + fname, 'w')
+	f = open(home_dir + '/mailbox/eml/' + fname, 'w')
 	f.write(data)
 	f.close()
 
