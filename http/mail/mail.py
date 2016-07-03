@@ -68,7 +68,7 @@ def mailbox():
 	connection = sqlite3.connect(dbpath)
 	cu = connection.cursor()
 	try:
-		cu.execute('select * from mailbox order by id desc')
+		cu.execute('select * from mailbox order by date desc')
 		text = cu.fetchall()
 		cu.close()
 		dt = {}
