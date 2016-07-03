@@ -43,8 +43,8 @@ def r_protocol(data, email):
 	return '502 Error\r\n'
 
 def r_fromok(data, email):
-	logging.debug('from:\t%s' % data)
-	r = re.match(r'MAIL FROM:\s*<(.+?)>', data.strip())
+	logging.debug('from:\t%s' % data.strip())
+	r = re.match(r'MAIL FROM:\s*<(.+?)>', data)
 	if r:
 		mfrom = r.group(1)
 		print mfrom
@@ -54,8 +54,8 @@ def r_fromok(data, email):
 	return '502 Error\r\n'
 
 def r_took(data, email):
-	logging.debug('to:\t%s' % data)
-	r = re.match(r'RCPT TO:\s*<(.+?)>', data.strip())
+	logging.debug('to:\t%s' % data.strip())
+	r = re.match(r'RCPT TO:\s*<(.+?)>', data)
 	if r:
 		mto = r.group(1)
 		print mto
