@@ -2,8 +2,19 @@ import socket
 import select
 import errno
 import re
+import logging
 
 import db
+
+base_dir = sys.argv[1]
+home_dir = base_dir + '/mail'
+logpath = home_dir + '/mail.log'
+
+logging.basicConfig(level = logging.DEBUG,
+	format = '%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+	datefmt = '%a %d %b %Y %H:%M:%S',
+	filename = logpath,
+	filemode = 'w')
 
 class eml():
 	def __init__(self):
@@ -31,6 +42,7 @@ def r_protocol(data, email):
 	return '502 Error\r\n'
 
 def r_fromok(data, email):
+	logging.debug('from:\t%s' % data)
 	r = re.match(r'MAIL FROM:\s*<(.+?)>', data)
 	if r:
 		mfrom = r.group(1)
@@ -41,10 +53,13 @@ def r_fromok(data, email):
 	return '502 Error\r\n'
 
 def r_took(data, email):
+	logging.debug('to:\t%s' % data)
 	r = re.match(r'RCPT TO:\s*<(.+?)>', data)
 	if r:
 		mto = r.group(1)
 		print mto
+		if mto.find('wblog.top') == -1:
+			return '502 Error\r\n'
 		email.data += data
 		email.mto = mto
 		return '250 OK\r\n'
@@ -68,10 +83,11 @@ def r_end(data, email):
 	return '502 Error\r\n'
 
 
-def remove_client(fd, epoll, connections, rsn):
+def remove_client(fd, epoll, connections, state, rsn):
 	epoll.unregister(fd)
 	connections[fd].close()
-	print 'removed:\t' + rsn
+	logging.info('removed[%d]:[%d]\t%s' % (fd, state, rsn))
+	print 'removed[%d]:[%d]\t%s' % (fd, state, rsn)
 
 def MailServer():
 	switch = {1: r_hello,2: r_protocol,3: r_fromok,\
@@ -100,23 +116,25 @@ def MailServer():
 				email = eml()
 				email.ip = str(addr[0])
 				mailbox_tmp[client.fileno()] = [email, '', 1]
+				logging.info('connection[%d]:\t%s:%d' % (client.fileno(), addr[0], addr[1]))
 				print 'connection:\t%s:%d' % (addr[0], addr[1])
 			elif events & select.EPOLLHUP or events & select.EPOLLERR:
-				remove_client(fd, epoll, connections, 'socket error')
+				remove_client(fd, epoll, connections, 0, 'socket error')
 				continue
 			elif events & select.EPOLLIN:
 				datas = ''
 				while True:
 					try:
+						state = mailbox_tmp[fd][2]
 						data = connections[fd].recv(1024)
 						if not data and not datas:
-							if mailbox_tmp[fd][2] == 6:
+							if state == 6:
 								if mailbox_tmp[fd][0].save():
-									remove_client(fd, epoll, connections, 'mail save finish')
+									remove_client(fd, epoll, connections, state, 'mail save finish')
 								else:
-									remove_client(fd, epoll, connections, 'mail error')
+									remove_client(fd, epoll, connections, state, 'mail error')
 							else:
-								remove_client(fd, epoll, connections, 'connect break')
+								remove_client(fd, epoll, connections, state, 'connect break')
 							break
 						if len(data) == 0:
 							e = socket.error
@@ -129,23 +147,23 @@ def MailServer():
 							try:
 								mailbox_tmp[fd][1] += datas
 								if len(mailbox_tmp[fd][1]) > 1024 * 1024 * 5:
-									remove_client(fd, epoll, connections, 'recv data too long')
+									remove_client(fd, epoll, connections, state, 'recv data too long')
 									break
-								if (mailbox_tmp[fd][2] == 5 and mailbox_tmp[fd][1].find('\r\n.\r\n') != -1)\
-									or (mailbox_tmp[fd][2] != 5 and mailbox_tmp[fd][1].find('\r\n') != -1):
+								if (state == 5 and mailbox_tmp[fd][1].find('\r\n.\r\n') != -1)\
+									or (state != 5 and mailbox_tmp[fd][1].find('\r\n') != -1):
 									mailbox_tmp[fd][2] += 1
 									epoll.modify(fd, select.EPOLLOUT|select.EPOLLET)
 							except:
-								remove_client(fd, epoll, connections, 'recv data error')
+								remove_client(fd, epoll, connections, state, 'recv data error')
 						else:
-							if mailbox_tmp[fd][2] == 6:
+							if state == 6:
 								if mailbox_tmp[fd][0].save():
-									remove_client(fd, epoll, connections, 'mail save finish')
+									remove_client(fd, epoll, connections, state, 'mail save finish')
 								else:
-									remove_client(fd, epoll, connections, 'mail error')
+									remove_client(fd, epoll, connections, state, 'mail error')
 							else:
 								print 'recv:' + str(e)
-								remove_client(fd, epoll, connections, 'recv error')
+								remove_client(fd, epoll, connections, state, 'recv error')
 						break
 			elif events & select.EPOLLOUT:
 				email = mailbox_tmp[fd][0]
@@ -163,16 +181,16 @@ def MailServer():
 						epoll.modify(fd, select.EPOLLIN|select.EPOLLET)
 					else:
 						print 'send:' + str(e)
-						remove_client(fd, epoll, connections, 'send error')
+						remove_client(fd, epoll, connections, state, 'send error')
 						break
 				if int(res[0]) > 3:
-					remove_client(fd, epoll, connections, 'format error')
+					remove_client(fd, epoll, connections, state, 'format error')
 					break
 				if state == 7:
 					if mailbox_tmp[fd][0].save():
-						remove_client(fd, epoll, connections, 'mail save finish')
+						remove_client(fd, epoll, connections, state, 'mail save finish')
 					else:
-						remove_client(fd, epoll, connections, 'mail error')
+						remove_client(fd, epoll, connections, state, 'mail error')
 	epoll.close()
 
 MailServer()
